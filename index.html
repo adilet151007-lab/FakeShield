@@ -3,104 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FakeShield — Медиа сауаттылық</title>
+    <title>FakeShield</title>
+
+    <!-- ПОДКЛЮЧЕНИЕ CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <header>
-        <div class="container">
-            <div class="logo">Fake<span>Shield</span></div>
-            <nav>
-                <a href="#hero">Басты бет</a>
-                <a href="#check">Тексеру</a>
-                <a href="#learn">Оқу</a>
-                <a href="#test">Тест</a>
-            </nav>
-        </div>
-    </header>
+<header>
+    <div class="container">
+        <div class="logo">Fake<span>Shield</span></div>
+    </div>
+</header>
 
-    <main>
-        <!-- Hero Section -->
-        <section id="hero" class="hero">
-            <h1>Жалған ақпараттан <span>қорған!</span></h1>
-            <p>Медиа сауаттылықты арттыр және фейктерді анықтауды үйрен.</p>
-            <a href="#check" class="btn-primary">Тексеруді бастау</a>
-        </section>
+<section class="hero">
+    <h1>Жалған ақпараттан қорған!</h1>
+    <p>Фейктерді анықтайтын интеллектуалды жүйе</p>
+</section>
 
-        <!-- Проверка -->
-<section id="check" class="check">
+<section class="check">
     <div class="container">
         <h2>Ақпаратты тексеру</h2>
-        <div class="input-group">
-            <textarea id="userInput" placeholder="Күмәнді мәтінді немесе сілтемені осы жерге қойыңыз..."></textarea>
-            <br>
-            <button class="btn-primary" onclick="checkFake()">Талдау жасау</button>
-        </div>
 
-        <!-- Блок результата -->
-        <div id="resultBlock" class="result-card" style="display: none;">
-            <h2>Нәтиже</h2>
+        <textarea id="userInput" placeholder="Мәтінді енгіз..."></textarea>
+
+        <br>
+        <button class="btn-primary" onclick="checkFake()">Талдау жасау</button>
+
+        <!-- AI ОБУЧЕНИЕ -->
+        <br><br>
+        <button onclick="trainCurrent('fake')">❌ Бұл фейк</button>
+        <button onclick="trainCurrent('real')">✅ Бұл дұрыс</button>
+
+        <div id="resultBlock" class="result-card" style="display:none;">
             <p id="resultText"></p>
         </div>
     </div>
 </section>
 
-<!-- Тест -->
-<section id="test" class="test-section">
-    <div class="container">
-        <h2>Медиа сауаттылық тесті</h2>
-        <p>Өз деңгейіңізді тексеріп, жаңа нәрсе үйреніңіз!</p>
-        <button class="btn-secondary">Тестті бастау</button>
-    </div>
-</section>
+<footer>
+    <p>© 2026 FakeShield</p>
+</footer>
 
-<script>
-function checkFake() {
-    const resultBlock = document.getElementById("resultBlock");
-    const resultText = document.getElementById("resultText");
-    const input = document.getElementById("userInput").value;
+<!-- ПОДКЛЮЧЕНИЕ JS -->
+<script src="script.js"></script>
 
-    if(input.trim() === "") {
-        alert("Мәтінді енгізіңіз!");
-        return;
-    }
-
-    // Показываем блок результата
-    resultBlock.style.display = "block";
-    resultText.innerText = "⚠ Бұл ақпарат күмәнді болуы мүмкін. Дереккөздерді қайта тексеруді ұсынамыз.";
-    
-    // Плавный скролл к результату
-    resultBlock.scrollIntoView({ behavior: 'smooth' });
-}
-</script>
-
-
-        <!-- Обучение -->
-        <section id="learn" class="learn">
-            <div class="container">
-                <h2>Медиа сауаттылық негіздері</h2>
-                <div class="cards">
-                    <div class="card">
-                        <h3>🔍 Анықтау</h3>
-                        <p>Фейкті қалай тез тануға болады?</p>
-                    </div>
-                    <div class="card">
-                        <h3>🧠 Манипуляция</h3>
-                        <p>Психологиялық қысым түрлері.</p>
-                    </div>
-                    <div class="card">
-                        <h3>✅ Дереккөз</h3>
-                        <p>Сенімді ақпаратты қайдан іздеу керек?</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer>
-        <p>© 2026 FakeShield. Барлық құқықтар қорғалған.</p>
-    </footer>
-    <script src="script.js"></script>
 </body>
 </html>
