@@ -1,1 +1,220 @@
-// ==============================\n// 🧠 AI ХРАНИЛИЩЕ\n// ==============================\nfunction getAIData() {\n    return JSON.parse(localStorage.getItem("aiData")) || {\n        fake: [],\n        real: []\n    };\n}\n\nfunction saveAIData(data) {\n    localStorage.setItem("aiData", JSON.stringify(data));\n}\n\n// ==============================\n// 🎓 ОБУЧЕНИЕ\n// ==============================\nfunction trainAI(text, label) {\n    let data = getAIData();\n\n    if (label === "fake") {\n        data.fake.push(text);\n    } else {\n        data.real.push(text);\n    }\n\n    saveAIData(data);\n}\n\n// ==============================\n// 🤖 ПРЕДСКАЗАНИЕ\n// ==============================\nfunction aiPredict(text) {\n    let data = getAIData();\n    let score = 0;\n\n    function similarity(a, b) {\n        const wordsA = a.split(/\s+/);\n        const wordsB = b.split(/\s+/);\n        let matches = 0;\n\n        wordsA.forEach(word => {\n            if (wordsB.includes(word)) matches++;\n        });\n\n        return matches / Math.max(wordsA.length, 1);\n    }\n\n    data.fake.forEach(example => {\n        score += similarity(text, example) * 40;\n    });\n\n    data.real.forEach(example => {\n        score -= similarity(text, example) * 30;\n    });\n\n    return score;\n}\n\n// ==============================\n// 🎮 КНОПКИ ОБУЧЕНИЯ\n// ==============================\nfunction trainCurrent(label) {\n    const text = document.getElementById("userInput").value.toLowerCase();\n\n    if (text.trim() === "") {\n        alert("Нет текста для обучения");\n        return;\n    }\n\n    trainAI(text, label);\n    alert("AI обучен!");\n}\n\n// ==============================\n// 🔍 ОСНОВНАЯ ФУНКЦИЯ\n// ==============================\nfunction checkFake() {\n    const rawText = document.getElementById("userInput").value;\n    const text = rawText.toLowerCase();\n    const resultBlock = document.getElementById("resultBlock");\n    const resultText = document.getElementById("resultText");\n\n    if (text.trim() === "") {\n        alert("Мәтінді енгізіңіз!");\n        return;\n    }\n\n    // 🔥 ВКЛЮЧАЕМ АНИМАЦИЮ\n    document.body.classList.add("analyzing");\n\n    let score = 0;\n\n    const redFlags = [\n        "тегін", "ұтыс", "акция", "шұғыл",\n        "таратыңыз", "бәріне жібер", "ақша",\n        "сенсация", "жасырын"\n    ];\n\n    const goodSigns = [\n        "зерттеу", "ресми", "дереккөз",\n        "статистика", "министрлік", "мәлімдеді"\n    ];\n\n    function countOccurrences(word) {\n        const regex = new RegExp(`\\b${word}\\b`, "g");\n        const matches = text.match(regex);\n        return matches ? matches.length : 0;\n    }\n\n    let redCount = 0;\n    redFlags.forEach(word => {\n        const count = countOccurrences(word);\n        redCount += count;\n        score += count * 20;\n    });\n\n    let goodCount = 0;\n    goodSigns.forEach(word => {\n        const count = countOccurrences(word);\n        goodCount += count;\n        score -= count * 10;\n    });\n\n    // 💣 анти-обман\n    if (redCount > 0 && goodCount > 0) {\n        score += 20;\n    }\n\n    // 🌐 ссылки\n    if (text.includes("http://")) score += 25;\n    if (text.includes(".tk") || text.includes(".ga") || text.includes(".xyz")) score += 20;\n\n    // 🔊 CAPS\n    if (rawText === rawText.toUpperCase() && rawText.length > 10) {\n        score += 25;\n    }\n\n    // ❗ !\n    const exclamationCount = (text.match(/!/g) || []).length;\n    score += Math.min(exclamationCount * 5, 25);\n\n    // 🔁 повторы\n    const words = text.split(/\s+/).filter(w => w.length > 0);\n    const uniqueWords = new Set(words);\n\n    if (words.length > 0) {\n        const repetitionRatio = words.length / uniqueWords.size;\n        if (repetitionRatio > 1.5) score += 15;\n    }\n\n    // ✂️ короткий текст\n    if (words.length < 5) score += 10;\n\n    // 🤖 AI\n    let aiScore = aiPredict(text);\n    score += aiScore;\n\n    let riskLevel = Math.min(Math.max(score, 0), 100);\n\n    let result = { text: "", color: "" };\n\n    if (riskLevel >= 60) {\n        result = {\n            text: `❌ Қауіп жоғары (${riskLevel}%): Бұл фейк немесе манипуляция!`,\n            color: "#ef4444"\n        };\n    } else if (riskLevel >= 30) {\n        result = {\n            text: `⚠️ Күмәнді (${riskLevel}%): Ақпаратты тексеріңіз.`,\n            color: "#eab308"\n        };\n    } else {\n        result = {\n            text: `✅ Сенімді (${riskLevel}%): Мәтін қалыпты көрінеді.`,\n            color: "#22c55e"\n        };\n    }\n\n    result.text += `<br><small>Фейк: ${redCount}, Сенімді: ${goodCount}, AI: ${Math.round(aiScore)}</small>`;\n\n    // ⏳ ДЕЛАЕМ ЭФФЕКТ "ДУМАЕТ"\n    setTimeout(() => {\n        document.body.classList.remove("analyzing");\n\n        resultBlock.style.display = "block";\n        resultBlock.classList.add("active");\n\n        resultBlock.style.borderColor = result.color;\n        resultBlock.style.background = result.color + "1A";\n        resultText.innerHTML = `<strong>${result.text}</strong>`;\n\n        resultBlock.scrollIntoView({ behavior: "smooth" });\n    }, 500);\n}\n\n/*\n   Author: Рейімбаев Әділет ИС 25-3\n   Project: FakeShield 2026 (AI + Animation Version)\n*/
+// ==============================
+// 🧠 FakeShield AI Engine v2
+// Author: Рейімбаев Әділет ИС 25-3
+// ==============================
+
+// ---------- ХРАНИЛИЩЕ ----------
+function getAIData() {
+    return JSON.parse(localStorage.getItem("fake_ai_db")) || {
+        fake: [],
+        real: []
+    };
+}
+
+function saveAIData(data) {
+    localStorage.setItem("fake_ai_db", JSON.stringify(data));
+}
+
+// ---------- ОБУЧЕНИЕ ----------
+function trainAI(text, label) {
+    const data = getAIData();
+
+    if (label === "fake") {
+        data.fake.push(text);
+    } else {
+        data.real.push(text);
+    }
+
+    saveAIData(data);
+}
+
+// ---------- СХОЖЕСТЬ ----------
+function similarity(a, b) {
+    const wordsA = a.split(/\s+/);
+    const wordsB = b.split(/\s+/);
+
+    let matches = 0;
+
+    wordsA.forEach(w => {
+        if (wordsB.includes(w)) matches++;
+    });
+
+    return matches / Math.max(wordsA.length, 1);
+}
+
+// ---------- AI ПРЕДСКАЗАНИЕ ----------
+function aiPredict(text) {
+    const data = getAIData();
+    let score = 0;
+
+    data.fake.forEach(example => {
+        score += similarity(text, example) * 50;
+    });
+
+    data.real.forEach(example => {
+        score -= similarity(text, example) * 35;
+    });
+
+    return score;
+}
+
+// ---------- СЛОВАРИ ----------
+const redFlags = [
+    "тегін","ұтыс","акция","шұғыл","таратыңыз",
+    "бәріне","ақша","сенсация","жасырын","жеңіл ақша"
+];
+
+const goodSigns = [
+    "зерттеу","ресми","дереккөз","статистика",
+    "министрлік","мәлімдеді","аналитика"
+];
+
+// ---------- ПОДСЧЕТ СЛОВ ----------
+function countOccurrences(text, word) {
+    const regex = new RegExp(`\\b${word}\\b`, "g");
+    const matches = text.match(regex);
+    return matches ? matches.length : 0;
+}
+
+// ---------- АНАЛИЗ ----------
+function analyzeText(rawText) {
+    const text = rawText.toLowerCase();
+    let score = 0;
+
+    let redCount = 0;
+    let goodCount = 0;
+
+    // 🔴 плохие слова
+    redFlags.forEach(word => {
+        const count = countOccurrences(text, word);
+        redCount += count;
+        score += count * 20;
+    });
+
+    // 🟢 хорошие слова
+    goodSigns.forEach(word => {
+        const count = countOccurrences(text, word);
+        goodCount += count;
+        score -= count * 12;
+    });
+
+    // 💣 смешанные сигналы
+    if (redCount > 0 && goodCount > 0) {
+        score += 25;
+    }
+
+    // 🌐 ссылки
+    if (text.includes("http://")) score += 25;
+    if (text.includes(".tk") || text.includes(".xyz") || text.includes(".ga")) score += 20;
+
+    // 🔊 CAPS
+    if (rawText === rawText.toUpperCase() && rawText.length > 10) {
+        score += 25;
+    }
+
+    // ❗ восклицания
+    const exclam = (text.match(/!/g) || []).length;
+    score += Math.min(exclam * 5, 25);
+
+    // 🔁 повторы
+    const words = text.split(/\s+/).filter(w => w.length > 0);
+    const unique = new Set(words);
+
+    if (words.length > 0) {
+        const ratio = words.length / unique.size;
+        if (ratio > 1.5) score += 15;
+    }
+
+    // ✂️ короткий текст
+    if (words.length < 5) score += 10;
+
+    // 🤖 AI
+    const aiScore = aiPredict(text);
+    score += aiScore;
+
+    // нормализация
+    const risk = Math.min(Math.max(score, 0), 100);
+
+    return {
+        risk,
+        redCount,
+        goodCount,
+        aiScore: Math.round(aiScore)
+    };
+}
+
+// ---------- UI ----------
+function showResult(data) {
+    const resultBlock = document.getElementById("resultBlock");
+    const resultText = document.getElementById("resultText");
+
+    let result = { text: "", color: "" };
+
+    if (data.risk >= 60) {
+        result = {
+            text: `❌ Қауіп жоғары (${data.risk}%)`,
+            color: "#ef4444"
+        };
+    } else if (data.risk >= 30) {
+        result = {
+            text: `⚠️ Күмәнді (${data.risk}%)`,
+            color: "#eab308"
+        };
+    } else {
+        result = {
+            text: `✅ Сенімді (${data.risk}%)`,
+            color: "#22c55e"
+        };
+    }
+
+    result.text += `<br><small>
+    Фейк сөздер: ${data.redCount} |
+    Сенімді: ${data.goodCount} |
+    AI: ${data.aiScore}
+    </small>`;
+
+    resultBlock.style.display = "block";
+    resultBlock.style.borderColor = result.color;
+    resultBlock.style.background = result.color + "1A";
+    resultText.innerHTML = `<strong>${result.text}</strong>`;
+
+    setTimeout(() => {
+        resultBlock.classList.add("active");
+    }, 50);
+
+    resultBlock.scrollIntoView({ behavior: "smooth" });
+}
+
+// ---------- ОСНОВНАЯ ----------
+function checkFake() {
+    const input = document.getElementById("userInput").value;
+
+    if (input.trim() === "") {
+        alert("Мәтінді енгізіңіз!");
+        return;
+    }
+
+    document.body.classList.add("analyzing");
+
+    setTimeout(() => {
+        const data = analyzeText(input);
+
+        document.body.classList.remove("analyzing");
+
+        showResult(data);
+    }, 500);
+}
+
+// ---------- ОБУЧЕНИЕ КНОПКИ ----------
+function trainCurrent(label) {
+    const text = document.getElementById("userInput").value.toLowerCase();
+
+    if (!text.trim()) {
+        alert("Мәтін жоқ");
+        return;
+    }
+
+    trainAI(text, label);
+
+    alert("AI сақталды 🧠");
+        }  
