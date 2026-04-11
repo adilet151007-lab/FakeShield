@@ -1,220 +1,144 @@
 // ==============================
-// 🧠 FakeShield AI Engine v2
-// Author: Рейімбаев Әділет ИС 25-3
+// FakeShield AI Engine (Final)
+// Author: Рейімбаев Әділет
 // ==============================
 
-// ---------- ХРАНИЛИЩЕ ----------
-function getAIData() {
-    return JSON.parse(localStorage.getItem("fake_ai_db")) || {
+// ---------- STORAGE ----------
+const getAIData = () =>
+    JSON.parse(localStorage.getItem("fake_ai_db")) || {
         fake: [],
-        real: []
+        real: [],
+        neutral: []
     };
-}
 
-function saveAIData(data) {
+const saveAIData = data =>
     localStorage.setItem("fake_ai_db", JSON.stringify(data));
-}
 
-// ---------- ОБУЧЕНИЕ ----------
+// ---------- TRAIN ----------
 function trainAI(text, label) {
     const data = getAIData();
-
-    if (label === "fake") {
-        data.fake.push(text);
-    } else {
-        data.real.push(text);
-    }
-
+    (data[label] || data.neutral).push(text);
     saveAIData(data);
 }
 
-// ---------- СХОЖЕСТЬ ----------
-function similarity(a, b) {
-    const wordsA = a.split(/\s+/);
-    const wordsB = b.split(/\s+/);
+// ---------- SIMILARITY ----------
+const sim = (a, b) => {
+    const A = a.split(/\s+/);
+    const B = b.split(/\s+/);
+    return A.filter(w => B.includes(w)).length / Math.max(A.length, 1);
+};
 
-    let matches = 0;
-
-    wordsA.forEach(w => {
-        if (wordsB.includes(w)) matches++;
-    });
-
-    return matches / Math.max(wordsA.length, 1);
-}
-
-// ---------- AI ПРЕДСКАЗАНИЕ ----------
+// ---------- AI ----------
 function aiPredict(text) {
-    const data = getAIData();
-    let score = 0;
+    const { fake, real, neutral } = getAIData();
 
-    data.fake.forEach(example => {
-        score += similarity(text, example) * 50;
-    });
+    let score =
+        fake.reduce((s, e) => s + sim(text, e) * 50, 0) -
+        real.reduce((s, e) => s + sim(text, e) * 35, 0);
 
-    data.real.forEach(example => {
-        score -= similarity(text, example) * 35;
-    });
+    neutral.forEach(e => score *= (1 - sim(text, e) * 0.5));
 
     return score;
 }
 
-// ---------- СЛОВАРИ ----------
+// ---------- WORDS ----------
 const redFlags = [
-    "тегін","ұтыс","акция","шұғыл","таратыңыз",
-    "бәріне","ақша","сенсация","жасырын","жеңіл ақша"
+    "тегін","ұтыс","акция","шұғыл",
+    "таратыңыз","бәріне","ақша",
+    "сенсация","жасырын"
 ];
 
 const goodSigns = [
-    "зерттеу","ресми","дереккөз","статистика",
-    "министрлік","мәлімдеді","аналитика"
+    "зерттеу","ресми","дереккөз",
+    "статистика","министрлік","мәлімдеді"
 ];
 
-// ---------- ПОДСЧЕТ СЛОВ ----------
-function countOccurrences(text, word) {
-    const regex = new RegExp(`\\b${word}\\b`, "g");
-    const matches = text.match(regex);
-    return matches ? matches.length : 0;
-}
+// ---------- ANALYZE ----------
+function analyzeText(raw) {
+    const text = raw.toLowerCase();
 
-// ---------- АНАЛИЗ ----------
-function analyzeText(rawText) {
-    const text = rawText.toLowerCase();
-    let score = 0;
+    const count = arr =>
+        arr.reduce((s, w) => s + (text.includes(w) ? 1 : 0), 0);
 
-    let redCount = 0;
-    let goodCount = 0;
+    let score =
+        count(redFlags) * 20 -
+        count(goodSigns) * 12;
 
-    // 🔴 плохие слова
-    redFlags.forEach(word => {
-        const count = countOccurrences(text, word);
-        redCount += count;
-        score += count * 20;
-    });
+    if (count(redFlags) && count(goodSigns)) score += 20;
 
-    // 🟢 хорошие слова
-    goodSigns.forEach(word => {
-        const count = countOccurrences(text, word);
-        goodCount += count;
-        score -= count * 12;
-    });
+    if (/http:\/\//.test(text)) score += 25;
+    if (/\.(tk|xyz|ga)/.test(text)) score += 20;
 
-    // 💣 смешанные сигналы
-    if (redCount > 0 && goodCount > 0) {
-        score += 25;
-    }
+    if (raw === raw.toUpperCase() && raw.length > 10) score += 25;
 
-    // 🌐 ссылки
-    if (text.includes("http://")) score += 25;
-    if (text.includes(".tk") || text.includes(".xyz") || text.includes(".ga")) score += 20;
+    const ex = (text.match(/!/g) || []).length;
+    score += Math.min(ex * 5, 25);
 
-    // 🔊 CAPS
-    if (rawText === rawText.toUpperCase() && rawText.length > 10) {
-        score += 25;
-    }
-
-    // ❗ восклицания
-    const exclam = (text.match(/!/g) || []).length;
-    score += Math.min(exclam * 5, 25);
-
-    // 🔁 повторы
-    const words = text.split(/\s+/).filter(w => w.length > 0);
+    const words = text.split(/\s+/);
     const unique = new Set(words);
-
-    if (words.length > 0) {
-        const ratio = words.length / unique.size;
-        if (ratio > 1.5) score += 15;
-    }
-
-    // ✂️ короткий текст
+    if (words.length / unique.size > 1.5) score += 15;
     if (words.length < 5) score += 10;
 
-    // 🤖 AI
     const aiScore = aiPredict(text);
     score += aiScore;
 
-    // нормализация
-    const risk = Math.min(Math.max(score, 0), 100);
-
     return {
-        risk,
-        redCount,
-        goodCount,
-        aiScore: Math.round(aiScore)
+        risk: Math.min(Math.max(score, 0), 100),
+        ai: Math.round(aiScore),
+        red: count(redFlags),
+        good: count(goodSigns)
     };
 }
 
 // ---------- UI ----------
-function showResult(data) {
-    const resultBlock = document.getElementById("resultBlock");
-    const resultText = document.getElementById("resultText");
+function showResult({ risk, ai, red, good }) {
+    const block = document.getElementById("resultBlock");
+    const text = document.getElementById("resultText");
 
-    let result = { text: "", color: "" };
+    const state =
+        risk >= 60 ? ["❌ Қауіп жоғары", "#ef4444"] :
+        risk >= 30 ? ["⚠️ Күмәнді", "#eab308"] :
+                     ["✅ Сенімді", "#22c55e"];
 
-    if (data.risk >= 60) {
-        result = {
-            text: `❌ Қауіп жоғары (${data.risk}%)`,
-            color: "#ef4444"
-        };
-    } else if (data.risk >= 30) {
-        result = {
-            text: `⚠️ Күмәнді (${data.risk}%)`,
-            color: "#eab308"
-        };
-    } else {
-        result = {
-            text: `✅ Сенімді (${data.risk}%)`,
-            color: "#22c55e"
-        };
-    }
+    text.innerHTML = `
+        <strong>${state[0]} (${risk}%)</strong><br>
+        <small>Фейк: ${red} | Сенімді: ${good} | AI: ${ai}</small>
+    `;
 
-    result.text += `<br><small>
-    Фейк сөздер: ${data.redCount} |
-    Сенімді: ${data.goodCount} |
-    AI: ${data.aiScore}
-    </small>`;
+    block.style.display = "block";
+    block.style.borderColor = state[1];
+    block.style.background = state[1] + "1A";
 
-    resultBlock.style.display = "block";
-    resultBlock.style.borderColor = result.color;
-    resultBlock.style.background = result.color + "1A";
-    resultText.innerHTML = `<strong>${result.text}</strong>`;
-
-    setTimeout(() => {
-        resultBlock.classList.add("active");
-    }, 50);
-
-    resultBlock.scrollIntoView({ behavior: "smooth" });
+    setTimeout(() => block.classList.add("active"), 50);
+    block.scrollIntoView({ behavior: "smooth" });
 }
 
-// ---------- ОСНОВНАЯ ----------
+// ---------- MAIN ----------
 function checkFake() {
-    const input = document.getElementById("userInput").value;
+    const inputEl = document.getElementById("userInput");
+    const text = inputEl.value.trim();
 
-    if (input.trim() === "") {
-        alert("Мәтінді енгізіңіз!");
-        return;
-    }
+    if (!text) return alert("Мәтінді енгізіңіз!");
 
     document.body.classList.add("analyzing");
 
     setTimeout(() => {
-        const data = analyzeText(input);
+        const data = analyzeText(text);
 
         document.body.classList.remove("analyzing");
-
         showResult(data);
-    }, 500);
+
+        // 🧹 автоочистка
+        inputEl.value = "";
+    }, 400);
 }
 
-// ---------- ОБУЧЕНИЕ КНОПКИ ----------
+// ---------- TRAIN BUTTON ----------
 function trainCurrent(label) {
     const text = document.getElementById("userInput").value.toLowerCase();
 
-    if (!text.trim()) {
-        alert("Мәтін жоқ");
-        return;
-    }
+    if (!text.trim()) return alert("Мәтін жоқ");
 
     trainAI(text, label);
-
-    alert("AI сақталды 🧠");
-        }  
+    alert("AI үйренді 🧠");
+            }
