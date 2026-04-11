@@ -42,7 +42,21 @@
 
         <br>
         <button class="btn-primary" onclick="checkFake()">Талдау жасау</button>
+        <div style="margin-top:15px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
 
+    <button onclick="trainCurrent('fake')" class="btn-secondary">
+        ❌ Фейк
+    </button>
+
+    <button onclick="trainCurrent('neutral')" class="btn-secondary">
+        ⚖️ Нейтрально
+    </button>
+
+    <button onclick="trainCurrent('real')" class="btn-secondary">
+        ✅ Достоверно
+    </button>
+
+        </div>
         <!-- AI обучение -->
         <div style="margin-top:15px;">
             <button onclick="trainCurrent('fake')" class="btn-secondary">
